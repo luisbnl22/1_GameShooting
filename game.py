@@ -1,87 +1,126 @@
 import pygame
 import math
 
-# Initialize Pygame
-pygame.init()
 
-# Set up the screen
-screen_width = 1700
-screen_height = 1200
-screen = pygame.display.set_mode((screen_width, screen_height))
-pygame.display.set_caption("Zombie Shooter Game")
-bg_color = (0, 0, 0)  # Black background
+class Bullet:
+    def __init__(self, x, y, angle):
+        self.x = x
+        self.y = y
+        self.angle = angle
+        self.speed = 10  # Speed of the bullet
+        self.radius = 5  # Radius of the bullet
+        self.color = (255, 0, 0)  # Color of the bullet (red)
 
-# Load the image
-image_path = "C:/Users/luis.pereira/Desktop/gif.gif"
-shooter_image = pygame.image.load(image_path)
-shooter_image = pygame.transform.rotate(shooter_image, 0)  # Initial rotation
+    def update(self):
+        self.x += self.speed * math.cos(math.radians(self.angle))
+        self.y -= self.speed * math.sin(math.radians(self.angle))
 
-# Create the shooter
-shooter_rect = shooter_image.get_rect(center=(screen_width // 2, screen_height // 2))
-shooter_angle = 0  # Initial angle for rotation
-shooter_speed = 5  # Movement speed
+    def draw(self, screen):
+        pygame.draw.circle(screen, self.color, (int(self.x), int(self.y)), self.radius)
 
-# Clock for controlling the frame rate
-clock = pygame.time.Clock()
+class ZombieShooterGame:
+    def __init__(self):
+        # Initialize Pygame
+        pygame.init()
 
-# Define the movement and rotation functions
-def move_forward():
-    global shooter_rect
-    dx = shooter_speed * math.cos(math.radians(shooter_angle))
-    dy = shooter_speed * math.sin(math.radians(shooter_angle))
-    shooter_rect.x += dx
-    shooter_rect.y -= dy
+        # Set up the screen
+        self.screen_width = 1700
+        self.screen_height = 1200
+        self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
+        pygame.display.set_caption("Zombie Shooter Game")
+        self.bg_color = (0, 0, 0)  # Black background
 
-def move_backward():
-    global shooter_rect
-    dx = shooter_speed * math.cos(math.radians(shooter_angle))
-    dy = shooter_speed * math.sin(math.radians(shooter_angle))
-    shooter_rect.x -= dx
-    shooter_rect.y += dy
+        # Load the image
+        self.image_path = "C:/Users/luis.pereira/Desktop/1_GameShooting/gif.gif"
+        self.shooter_image = pygame.image.load(self.image_path)
+        self.shooter_image = pygame.transform.rotate(self.shooter_image, 0)  # Initial rotation
 
-def rotate_left():
-    global shooter_angle
-    shooter_angle += 10
+        # Create the shooter
+        self.shooter_rect = self.shooter_image.get_rect(center=(self.screen_width // 2, self.screen_height // 2))
+        self.shooter_angle = 0  # Initial angle for rotation
+        self.shooter_speed = 5  # Movement speed
 
-def rotate_right():
-    global shooter_angle
-    shooter_angle -= 10
+        # List to store bullets
+        self.bullets = []
 
-# Main game loop
-running = True
-while running:
-    # Handle events
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-    
-    # Get keys pressed
-    keys = pygame.key.get_pressed()
-    if keys[pygame.K_UP]:
-        move_forward()
-    if keys[pygame.K_DOWN]:
-        move_backward()
-    if keys[pygame.K_LEFT]:
-        rotate_left()
-    if keys[pygame.K_RIGHT]:
-        rotate_right()
+        # Clock for controlling the frame rate
+        self.clock = pygame.time.Clock()
 
-    # Clear the screen
-    screen.fill(bg_color)
+        self.running = True
 
-    # Rotate the image
-    rotated_image = pygame.transform.rotate(shooter_image, shooter_angle)
-    rotated_rect = rotated_image.get_rect(center=shooter_rect.center)
+    def move_forward(self):
+        dx = self.shooter_speed * math.cos(math.radians(self.shooter_angle))
+        dy = self.shooter_speed * math.sin(math.radians(self.shooter_angle))
+        self.shooter_rect.x += dx
+        self.shooter_rect.y -= dy
 
-    # Draw the shooter
-    screen.blit(rotated_image, rotated_rect.topleft)
+    def move_backward(self):
+        dx = self.shooter_speed * math.cos(math.radians(self.shooter_angle))
+        dy = self.shooter_speed * math.sin(math.radians(self.shooter_angle))
+        self.shooter_rect.x -= dx
+        self.shooter_rect.y += dy
 
-    # Update the display
-    pygame.display.flip()
+    def rotate_left(self):
+        self.shooter_angle += 2
 
-    # Cap the frame rate
-    clock.tick(60)
+    def rotate_right(self):
+        self.shooter_angle -= 2
 
-# Quit Pygame
-pygame.quit()
-p
+    def handle_events(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    # Create a new bullet
+                    bullet = Bullet(self.shooter_rect.centerx, self.shooter_rect.centery, self.shooter_angle)
+                    self.bullets.append(bullet)
+
+    def update(self):
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_UP]:
+            self.move_forward()
+        if keys[pygame.K_DOWN]:
+            self.move_backward()
+        if keys[pygame.K_LEFT]:
+            self.rotate_left()
+        if keys[pygame.K_RIGHT]:
+            self.rotate_right()
+
+        # Update bullets
+        for bullet in self.bullets:
+            bullet.update()
+
+        # Remove off-screen bullets
+        self.bullets = [bullet for bullet in self.bullets if 0 <= bullet.x <= self.screen_width and 0 <= bullet.y <= self.screen_height]
+
+    def draw(self):
+        # Clear the screen
+        self.screen.fill(self.bg_color)
+
+        # Rotate the image
+        rotated_image = pygame.transform.rotate(self.shooter_image, self.shooter_angle)
+        rotated_rect = rotated_image.get_rect(center=self.shooter_rect.center)
+
+        # Draw the shooter
+        self.screen.blit(rotated_image, rotated_rect.topleft)
+
+        # Draw bullets
+        for bullet in self.bullets:
+            bullet.draw(self.screen)
+
+        # Update the display
+        pygame.display.flip()
+
+    def run(self):
+        while self.running:
+            self.handle_events()
+            self.update()
+            self.draw()
+            self.clock.tick(60)
+
+        pygame.quit()
+
+if __name__ == "__main__":
+    game = ZombieShooterGame()
+    game.run()
